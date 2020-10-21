@@ -2,7 +2,7 @@ const express = require('express')
 const app = express()
 const port = 3000
 
-const movies = [
+var movies = [
   { title: 'Jaws', year: 1975, rating: 8, id:12},
   { title: 'Avatar', year: 2009, rating: 7.8, id: 34 },
   { title: 'Brazil', year: 1985, rating: 8, id: 56 },
@@ -46,13 +46,33 @@ app.get('/search', (req, res) => {
     }
 })
 //create
-app.get('/movies/create', (req, res) => {
-  res.send(
-      {
-           status:200,
-           data:"ok"
-      }
-  )
+app.get('/movies/add', (req, res) => {
+  newTitle = req.query.title
+  newYear = Number(req.query.year)
+  newRating = req.query.rating
+  var newMovie = [{title: newTitle, year: newYear, rating: newRating}]
+  if (newTitle && newYear && newYear>=1888 && newYear<=2020){
+    if (newRating){
+      movies = movies.concat(newMovie)
+      res.send(
+          {
+               status:200,
+               data: movies
+          }
+      )
+    }else{
+      newMovie = [{title: newTitle, year: newYear, rating: 4}]
+      movies = movies.concat(newMovie)
+      res.send(
+          {
+               status:200,
+               data: movies
+          }
+      )
+    }
+  }else{
+    res.send({status:403, error:true, message:'you cannot create a movie without providing a title and a year'})
+  }
 })
 
 //read
