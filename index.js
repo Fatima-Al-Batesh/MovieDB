@@ -121,87 +121,106 @@ MongoClient.connect('mongodb+srv://fatima_batesh:d7WBMJAAur3ctVX0@cluster0.pcdza
       })
       .catch(error => console.error(error))
     })
-  //   //update
-  //   app.post('/movies/update-db/:ID', (req, res) => {
-  //     data = req.params;
-  //     newTitle = req.query.title
-  //     newYear = Number(req.query.year)
-  //     newRating = Number(req.query.rating)
-  //     let exist = false;
-  //     let index;
-  //     moviesCollection.find().toArray()
+
+    //update
+    app.post('/movies/update-db/:ID', (req, res) => {
+      data = req.params;
+      newTitle = req.query.title
+      newYear = Number(req.query.year)
+      newRating = Number(req.query.rating)
+      var exist = false;
+      let index;
+      var result;
+      moviesCollection.find().toArray()
       
-  //     .then(results => {
+      .then(results => {
         
-  //       for (var i = 0; i<results.length;i++){
-  //         if (data.ID == results[i]._id){
-  //           exist = true;
-  //           index = i;
-  //         }
-  //       }
-  //       let result = results[index];
+        for (var i = 0; i<results.length;i++){
+          if (data.ID == results[i]._id){
+            exist = true;
+            index = i;
+          }
+        }
+         result = results[index];
+      
+      if (exist){
+      Old = {"title":result.title,"year":result.year,"rating":result.rating};
+      var New = JSON.stringify({title:"result.title",year:"result.year",rating:"result.rating"});
+      
+      
+      if (!(newTitle || newYear || newRating) ){
+          moviesCollection.updateOne(Old, Old);
+          res.send({status: 200, message:'Nothing was updated'})
+      }
+      
+      if (newTitle) {
+          
+          New = New.replace('"result.title"', '"' + newTitle + '"')
+      }else {
+          New = New.replace('"result.title"', '"' + result.title + '"')
+      }
+      
+      if (newYear) {
+          New = New.replace('"result.year"', newYear)
+      }else {
+          New = New.replace('"result.year"', result.year)
+      }
+      
+      if (newRating) {
+          New = New.replace('"result.rating"', newRating)
+      }else {
+          New = New.replace('"result.rating"', result.rating)
+      }
+      
+      newJson = JSON.parse(New)
+      moviesCollection.updateOne(Old, newJson)
+      
+      moviesCollection.find().toArray()
+      .then(items => {
+      res.send({status:200, data:items})
+      })
+      .catch(error => console.error(error)) 
+      
+      }else {
+          res.send({status:404, error:true, message:'the movie <ID> does not exist'})
+        }
+    })
+    .catch(error => console.error(error))
+  })
+  //delete
+app.delete('/movies/delete/:ID', (req, res) => {
+  data = req.params;
+  let index;
+  let exist = false;
+  var result;
+  moviesCollection.find().toArray()
+      
+      .then(results => {
         
-      
-      
-  //     if (exist){
-  //     if(newTitle) 
-  //     //   //   if(newYear) moviesCollection.updateOne(results[index].year, newYear)
-  //     //   //   if(newRating) moviesCollection.updateOne(results[index].rating, newRating)
-  //     //   //   // moviesCollection.find().toArray()
-  //     //   .then(results => {
-  //     res.send({status:200, data:moviesCollection.updateOne(result.title, newTitle)})
-  //     //    })
-  //     //   //   // .catch(error => console.error(error)) 
-  //     }//else {
-  //     //   //   res.send({status:404, error:true, message:'the movie <ID> does not exist'})
-  //     //   // }
-  //   })
-  //   .catch(error => console.error(error))
-  // })
+        for (var i = 0; i<results.length;i++){
+          if (data.ID == results[i]._id){
+            exist = true;
+            index = i;
+          }
+        }
+         result = results[index];
+        
+    if (exist){
+      moviesCollection.deleteOne(result);
+      res.send(
+        {
+             status:200,
+             message:'data is deleted'
+        } )
+    }else {
+      res.send({status:404, error:true, message:'the movie <ID> does not exist'})
+    }
+  }) 
+  .catch(error => console.error(error))
+  })
   
 })
 
-// //update
-// app.put('/movies/update/:ID', (req, res) => {
-  // data = req.params;
-  // newTitle = req.query.title
-  // newYear = Number(req.query.year)
-  // newRating = Number(req.query.rating)
-  // let index
-  // let exist = false;
-  // for(var i = 0; i < movies.length; i++){
-    // if(data.ID == movies[i].id){
-      // exist = true;
-      // index= i;
-    // }
-  // }
-  // if (exist){
-    // if(newTitle) movies[index].title = newTitle
-    // if(newYear) movies[index].year = newYear
-    // if (newRating) movies[index].rating = newRating
-    // res.send({status:200, data:movies})
-  // }else {
-    // res.send({status:404, error:true, message:'the movie <ID> does not exist'})
-  // }
-// })
-// //delete
-// app.delete('/movies/delete/:ID', (req, res) => {
-  // data = req.params;
-  // let index
-  // let exist = false;
-  // for(var i = 0; i < movies.length; i++){
-    // if(data.ID == movies[i].id){
-      // exist = true;
-      // index= i;
-    // }
-  // }
-  // if (exist){
-    // movies.splice(index,1);
-    // res.send({status:200, data:movies})
-  // }else {
-    // res.send({status:404, error:true, message:'the movie <ID> does not exist'})
-  // }
-// })
 
 
 app.listen(port, () => {
