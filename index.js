@@ -1,12 +1,39 @@
 const express = require('express')
 const app = express()
 const port = 3000
+const bcrypt = require('bcrypt')
+
 const MongoClient = require('mongodb').MongoClient
-MongoClient.connect('mongodb+srv://fatima_batesh:d7WBMJAAur3ctVX0@cluster0.pcdza.mongodb.net/cluster0?retryWrites=true&w=majority', (err, client) => {
+//require users routes
+var users = require('./users.js');
+
+
+MongoClient.connect('mongodb+srv://fatima_batesh:d7WBMJAAur3ctVX0@cluster0.pcdza.mongodb.net/cluster0?retryWrites=true&w=majority', { useUnifiedTopology: true }, (err, client) => {
+  const dbUsers = client.db('users')
+  const usersCollection = dbUsers.collection('users')
+  //authorized user check function
+// const auth = (username, password) => {
+//   let auth = false
+//   usersCollection.find().toArray()
+//       .then(results => {
+//         results.map(item =>{
+//           if(username === item.username){
+//               if (bcrypt.compare(password, item.password)){
+//                 auth = true;
+//               }
+//           }
+//         })
+//       })
+//   return auth
+// }
   if (err) return console.error(err)
   console.log('Connected to Database')
   const db = client.db('movies')
   const moviesCollection = db.collection('movies')
+
+  //users
+  app.use('/user', users);
+
   //create
   app.post('/movies/add', (req, res) => {
   newTitle = req.query.title
@@ -123,7 +150,7 @@ MongoClient.connect('mongodb+srv://fatima_batesh:d7WBMJAAur3ctVX0@cluster0.pcdza
     })
 
     //update
-    app.post('/movies/update-db/:ID', (req, res) => {
+    app.post('/movies/update/:ID', async(req, res) => {
       data = req.params;
       newTitle = req.query.title
       newYear = Number(req.query.year)
@@ -131,8 +158,20 @@ MongoClient.connect('mongodb+srv://fatima_batesh:d7WBMJAAur3ctVX0@cluster0.pcdza
       var exist = false;
       let index;
       var result;
+      let existing = false;
+    usersCollection.find().toArray()
+      .then(result => {
+        result.map(item =>{
+          if(req.query.username === item.username){
+              if (bcrypt.compare(req.query.password, item.password)){
+                existing = true;
+                user= item;
+              }
+          }
+        })
+      })
+      //if (auth(req.query.username,req.query.password)){
       moviesCollection.find().toArray()
-      
       .then(results => {
         
         for (var i = 0; i<results.length;i++){
@@ -142,7 +181,7 @@ MongoClient.connect('mongodb+srv://fatima_batesh:d7WBMJAAur3ctVX0@cluster0.pcdza
           }
         }
          result = results[index];
-      
+      if (existing){
       if (exist){
       Old = {"title":result.title,"year":result.year,"rating":result.rating};
       var New = JSON.stringify({title:"result.title",year:"result.year",rating:"result.rating"});
@@ -173,19 +212,21 @@ MongoClient.connect('mongodb+srv://fatima_batesh:d7WBMJAAur3ctVX0@cluster0.pcdza
       }
       
       newJson = JSON.parse(New)
-      moviesCollection.updateOne(Old, newJson)
-      
-      moviesCollection.find().toArray()
-      .then(items => {
-      res.send({status:200, data:items})
-      })
+      moviesCollection.updateOne(Old, {$set: newJson})
+      // moviesCollection.find().toArray()
+      // .then(items => {
+      // res.send({status:200, data:items})
+      // })
       .catch(error => console.error(error)) 
       
       }else {
           res.send({status:404, error:true, message:'the movie <ID> does not exist'})
         }
+      }else  res.send({status:404, error:true, message:'Cannot find username or password'})
+
     })
     .catch(error => console.error(error))
+  //}else res.send({status:404, error:true, message:auth(req.query.username,req.query.password)})
   })
   //delete
 app.delete('/movies/delete/:ID', (req, res) => {
